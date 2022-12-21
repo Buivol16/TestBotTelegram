@@ -2,52 +2,54 @@ package ua.denis.project;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
+import com.pengrad.telegrambot.request.EditMessageReplyMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Main {
-    public static void main(String[] args){
-        TelegramBot telegramBot = new TelegramBot.Builder("5908021717:AAG5LoMklYUDYUy7jtQ7cItgYG0HsR9aui0").build();
-        telegramBot.setUpdatesListener(updates -> {
-            System.err.println("__________________Debug__________________");
-            updates.forEach(System.out::println);
-            updates.forEach(update -> {
+    private static TelegramBot telegramBot = new TelegramBot.Builder("5908021717:AAG5LoMklYUDYUy7jtQ7cItgYG0HsR9aui0").build();
+    private static int msgId = 0;
 
-                long myId = 653804698;
-                long victimId = 0;
+    public static void main(String[] args) {
+
+        telegramBot.setUpdatesListener(updates -> {
+            updates.forEach(update -> {
+                long chatId = 0;
+
                 if (update.message() != null) {
-                    if (update.message().text() != null && update.message().text().equals("/start")) {
-                        victimId = update.message().chat().id();
-                        telegramBot.execute(new SendMessage(victimId, "Испытать свою удачу?").replyMarkup(new InlineKeyboardMarkup().addRow(new InlineKeyboardButton("Да").callbackData("yes"), new InlineKeyboardButton("Нет").callbackData("no"))));
-                    }
+                    chatId = update.message().chat().id();
+
+                    if (update.message().text().equals("/start"))
+                        sendMessage(0, chatId, "Choose date", Keyboards.getKeyboard(null, update.message().messageId() + 1));
                 } else if (update.callbackQuery() != null) {
-                    var callBack = update.callbackQuery().data();
-                    if (update.callbackQuery().data().equals("yes")) {
-                        victimId = update.callbackQuery().message().chat().id();
-                        telegramBot.execute(new SendMessage(victimId, "Кручу-верчу, запутать хочу."));
-                        telegramBot.execute(new SendMessage(myId, "Настало время пошалить) Для пользователя " + update.callbackQuery().from().username()).replyMarkup(new InlineKeyboardMarkup().addRow(new InlineKeyboardButton("Обеспечить выигрыш").callbackData("giveWinTo " + victimId), new InlineKeyboardButton("Поднасрать)").callbackData("giveLoseTo " + victimId))));
-                    } else if (update.callbackQuery().data().equals("no")) {
-                        victimId = update.callbackQuery().message().chat().id();
-                        telegramBot.execute(new SendMessage(victimId, "Значит, в следующий раз(((("));
+                    chatId = update.callbackQuery().message().chat().id();
+                    var data = update.callbackQuery().data();
+                    var date = "";
+                    int messageId = 0;
+                    var matcher = Pattern.compile(".(\\d+.\\d+.\\d+)withId:(?<msgid>\\d+)").matcher(data);
+                    if (matcher.find()) {
+                        date = matcher.group(1);
+                        messageId = Integer.parseInt(matcher.group(2));
                     }
-                    if (update.callbackQuery().data().startsWith("giveWinTo ")){
-                        telegramBot.execute(new SendMessage(getVictimId(callBack), "Ты выиграл миллион долларов"));
-                    }
-                    else if (update.callbackQuery().data().startsWith("giveLoseTo ")){
-                        telegramBot.execute(new SendMessage(getVictimId(callBack), "Как обидно, тебе не повезло"));
-                    }
+                    telegramBot.execute(new EditMessageReplyMarkup(chatId, messageId).replyMarkup(Keyboards.getKeyboard(date, messageId)));
+
                 }
             });
             return UpdatesListener.CONFIRMED_UPDATES_ALL;
         });
 
     }
-    private static long getVictimId(String callBackData){
-        var string = "";
-        if (callBackData.startsWith("giveWinTo ")) string = callBackData.replaceAll("giveWinTo ", "");
-        else if (callBackData.startsWith("giveLoseTo ")) string = callBackData.replaceAll("giveLoseTo ", "");
-        return Long.parseLong(string);
+
+    private static void sendMessage(int addingDays, long chatId, String textMessage) {
+        msgId = telegramBot.execute(new SendMessage(chatId, textMessage)).message().messageId();
+    }
+
+    private static void sendMessage(int addingDays, long chatId, String textMessage, InlineKeyboardMarkup inlineKeyboardMarkup) {
+        telegramBot.execute(new SendMessage(chatId, textMessage).replyMarkup(inlineKeyboardMarkup));
     }
 }
