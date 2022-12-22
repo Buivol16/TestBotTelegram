@@ -14,31 +14,38 @@ import java.util.Date;
 
 public class Keyboards {
     public static InlineKeyboardMarkup getKeyboard(String data, long messageId) {
-        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup().addRow(
-                new InlineKeyboardButton("<").callbackData("<" + getDateFrom(data, -3) + "withId:" + messageId),
-                new InlineKeyboardButton(getDateFrom(data, 0)).callbackData(getDateFrom(data, 0)),
-                new InlineKeyboardButton(getDateFrom(data, 1)).callbackData(getDateFrom(data, 1)),
-                new InlineKeyboardButton(getDateFrom(data, 2)).callbackData(getDateFrom(data, 2)),
-                new InlineKeyboardButton(">").callbackData(">" + getDateFrom(data, 3) + "withId:" + messageId)
-        );
-        return keyboard;
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        try {
+            keyboard = keyboard.addRow(
+                    new InlineKeyboardButton("<").callbackData("<" + getDateFrom(data, -3) + "withId:" + messageId),
+                    getButton(data, 0),
+                    getButton(data, 1),
+                    getButton(data, 2),
+                    new InlineKeyboardButton(">").callbackData(">" + getDateFrom(data, 3) + "withId:" + messageId)
+            );
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        } finally {
+            return keyboard;
+        }
     }
-    private static String getDateFrom(String date, int addingDays){
+
+    private static String getDateFrom(String date, int addingDays) throws ParseException {
         var data = "";
-        Date date1 = null;
+        Date date1;
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        if (date != null){
-            try {
-                date1 = new SimpleDateFormat("dd.MM.yyyy").parse(date);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
+        if (date != null && !date.equals("")) {
+            date1 = new SimpleDateFormat("dd.MM.yyyy").parse(date);
             data = date1.toInstant()
                     .plus(addingDays, ChronoUnit.DAYS)
                     .atZone(ZoneId.systemDefault())
                     .format(dtf);
-        }
-        else data = Calendar.getInstance().toInstant().plus(addingDays, ChronoUnit.DAYS).atZone(ZoneId.systemDefault()).format(dtf);
+        } else
+            data = Calendar.getInstance().toInstant().plus(addingDays, ChronoUnit.DAYS).atZone(ZoneId.systemDefault()).format(dtf);
         return data;
+    }
+
+    private static InlineKeyboardButton getButton(String data, int addingDays) throws ParseException {
+        return new InlineKeyboardButton(getDateFrom(data, addingDays)).callbackData(getDateFrom(data, addingDays));
     }
 }
