@@ -45,10 +45,6 @@ public class Main {
 
     }
 
-    private static void sendMessage(int addingDays, long chatId, String textMessage) {
-        msgId = telegramBot.execute(new SendMessage(chatId, textMessage)).message().messageId();
-    }
-
     private static void sendMessage(int addingDays, long chatId, String textMessage, InlineKeyboardMarkup inlineKeyboardMarkup) {
         telegramBot.execute(new SendMessage(chatId, textMessage).replyMarkup(inlineKeyboardMarkup));
     }
